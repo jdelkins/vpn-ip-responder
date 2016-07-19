@@ -1,0 +1,13 @@
+#!/usr/local/bin/python2.7
+
+try:
+    from xmlrpclib import ServerProxy
+except:
+    from xmlrpc.client import ServerProxy
+import sys
+
+s = ServerProxy('http://varch:8000')
+try:
+    s.update_vpn_ip(sys.argv[1])
+except Exception as e:
+    print('ERROR: %' % e)
