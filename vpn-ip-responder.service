@@ -1,0 +1,13 @@
+[Unit]
+Description=Maintain port forwarding configuration in response to VPN ip changes.
+After=deluged.service
+
+[Service]
+Type=simple
+ExecStartPre=/home/jde/src/vpn-ip-responder/pull_vpn_ip
+ExecStart=/home/jde/src/vpn-ip-responder/vpn_ip_rpcserver
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
