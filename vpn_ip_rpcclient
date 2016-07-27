@@ -7,8 +7,10 @@ except:
     from xmlrpc.client import ServerProxy
 import sys
 import os
+import time
 
 def send_update():
+    time.sleep(10)
     s = ServerProxy('http://varch:8000')
     try:
         s.update_vpn_ip(sys.argv[1])
