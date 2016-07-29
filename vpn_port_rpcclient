@@ -12,11 +12,11 @@ from argparse import ArgumentParser
 
 config = None
 
-def send_update(dest_ip, dest_port, forwarding_port, deluged_port):
+def send_update(dest_ip, dest_port, forwarding_port):
     time.sleep(10)
     s = ServerProxy('http://{}:{}'.format(dest_ip, dest_port))
     try:
-        s.update_vpn_port(forwarding_port, deluged_port)
+        s.update_vpn_port(forwarding_port)
     except Exception as e:
         print('ERROR: %' % e)
 
@@ -24,7 +24,6 @@ def parse_args():
     parser = ArgumentParser(description='Send XML RPC message to update forwarded port')
     parser.add_argument('--destination-ip', '-d', type=str, required=True, metavar='IP', help='address of XML RPC server')
     parser.add_argument('--destination-port', '-p', type=int, metavar='LISTEN_PORT', default=8108, help='listening port of XML RPC server (default 8108)')
-    parser.add_argument('--deluged-port', '-P', type=int, metavar='DELUGED_PORT', default=58846, help='listening port of deluged')
     parser.add_argument('forwarding_port', type=int, metavar='FORWARDING_PORT', default=8108, help='new forwarding port, payload of message')
     return parser.parse_args()
 
@@ -42,5 +41,5 @@ if __name__ == '__main__':
     os.setsid()
     os.umask(0)
 
-    send_update(config.destination_ip, config.destination_port, config.forwarding_port, config.deluged_port)
+    send_update(config.destination_ip, config.destination_port, config.forwarding_port)
 
