@@ -5,6 +5,7 @@ import subprocess
 import urllib.parse, urllib.request
 import json
 import os
+import re
 
 def get_forwarded_port(local_ip, cred_filename, client_id_filename):
     # read privateinternetaccess credentials
@@ -35,7 +36,19 @@ def get_forwarded_port(local_ip, cred_filename, client_id_filename):
     return port
 
 port_filename_t = 'forwarded.port'
-def vpn_port_changed(port, config_dir, deluged_port):
+def vpn_port_changed(port, config_dir):
+    core_conf_file = open(os.path.join(config_dir, 'core.conf'))
+    # skip over initial turd
+    while core_conf_file.read(1) != '}':
+        pass
+    core_conf_json = json.loads(core_conf_file.read())
+    core_conf_file.close()
+    deluged_port = core_conf_json['daemon_port']
+
+    auth_file = open(os.path.join(config_dir, 'auth'))
+    (username, password) = re.match('^([^:]+):([^:]+):', auth_file.readline()).group(1, 2)
+    auth_file.close()
+
     # write the port to a file if it has changed.
     port_filename = os.path.join(config_dir, port_filename_t)
     oldport = 0
@@ -61,7 +74,7 @@ def vpn_port_changed(port, config_dir, deluged_port):
 
     # also  update deluged's port if it is running
     print('Updating deluge configuration')
-    deluge_rc = subprocess.run(['deluge-console', '-c', config_dir, 'connect 127.0.0.1:{}'.format(deluged_port), 'config -s listen_ports ({:d}, {:d})'.format(port, port)])
+    deluge_rc = subprocess.run(['deluge-console', '-c', config_dir, 'connect 127.0.0.1:{} {} {}; config -s listen_ports ({:d}, {:d})'.format(deluged_port, username, password, port, port)])
     deluge_rc.check_returncode()
 
 if __name__ == '__main__':

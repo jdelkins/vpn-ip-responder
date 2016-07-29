@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 config = None
 
 def send_update(dest_ip, dest_port, forwarding_port):
-    time.sleep(10)
+    time.sleep(1)
     s = ServerProxy('http://{}:{}'.format(dest_ip, dest_port))
     try:
         s.update_vpn_port(forwarding_port)
