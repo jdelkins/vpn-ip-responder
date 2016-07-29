@@ -35,7 +35,7 @@ def get_forwarded_port(local_ip, cred_filename, client_id_filename):
     return port
 
 port_filename_t = 'forwarded.port'
-def vpn_port_changed(port, config_dir):
+def vpn_port_changed(port, config_dir, deluged_port):
     # write the port to a file if it has changed.
     port_filename = os.path.join(config_dir, port_filename_t)
     oldport = 0
@@ -61,7 +61,7 @@ def vpn_port_changed(port, config_dir):
 
     # also  update deluged's port if it is running
     print('Updating deluge configuration')
-    deluge_rc = subprocess.run(['deluge-console', '-c', config_dir, 'config -s listen_ports ({:d}, {:d})'.format(port, port)])
+    deluge_rc = subprocess.run(['deluge-console', '-c', config_dir, 'connect 127.0.0.1:{}'.format(deluged_port), 'config -s listen_ports ({:d}, {:d})'.format(port, port)])
     deluge_rc.check_returncode()
 
 if __name__ == '__main__':
