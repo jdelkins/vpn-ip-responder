@@ -1,0 +1,43 @@
+#!/usr/bin/python -u
+
+from xmlrpc.server import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCRequestHandler
+from argparse import ArgumentParser
+import local_updates
+import sys
+
+config = None
+
+# call the worker function
+def update_vpn_port(port):
+    global config
+    print('received notice of forwarded port change: {}'.format(local_ip))
+    try:
+        local_updates.vpn_port_changed(port, config.config_dir)
+    except Exception as e:
+        # catch everything and keep going
+        print('ERROR: {}'.format(e), file=sys.stderr)
+
+# Restrict to a particular path.
+class RequestHandler(SimpleXMLRPCRequestHandler):
+    rpc_paths = ('/RPC2',)
+
+def serve_it(listen_ip, listen_port):
+    """Create server and serve!"""
+    server = SimpleXMLRPCServer((listen_ip, listen_port),
+                                requestHandler=RequestHandler,
+                                allow_none=True,
+                                logRequests=False)
+    server.register_introspection_functions()
+    server.register_function(update_vpn_port)
+    print('starting XML RPC server on {}:{}'.format(listen_ip, listen_port))
+    server.serve_forever()
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='XMLRPC server to set deluge port')
+    parser.add_argument('--listen-ip', '-l', metavar='IP', type=str, default='0.0.0.0', help='IP address to listen on (default 0.0.0.0)')
+    parser.add_argument('--listen-port', '-p', metavar='PORT', type=int, default='8108', help='IP port to listen on (default 8108)')
+    parser.add_argument('--config-dir', '-c', metavar='DIR', type=str, default='/config', help='Deluge config directory (default "/config")')
+    config = parser.parse_args()
+    serve_it(config.listen_ip, config.listen_port)
+
