@@ -4,6 +4,7 @@ import sys
 import subprocess
 import urllib.parse, urllib.request
 import json
+import os
 
 def get_forwarded_port(local_ip, cred_filename, client_id_filename):
     # read privateinternetaccess credentials
@@ -33,28 +34,30 @@ def get_forwarded_port(local_ip, cred_filename, client_id_filename):
         print('success: PIA gives us {:d}'.format(port))
     return port
 
-port_filename = 'forwarded.port'
+port_filename_t = 'forwarded.port'
 def vpn_port_changed(port, config_dir):
     # write the port to a file if it has changed.
-    port_filename = os.path.join(config_dir, port_filename)
+    port_filename = os.path.join(config_dir, port_filename_t)
     oldport = 0
     try:
         port_file = open(port_filename, 'r')
         oldport = int(port_file.readline().strip())
-    except Exception as e:
-        print('Error: problem reading {}: {}'.format(port_filename, e))
-        print('Continuing anyway')
-        pass
-    finally:
         port_file.close()
+    except Exception as e:
+        print('Error: problem reading cached port file: {}'.format(e))
+        print('Continuing anyway')
 
     if oldport == port:
         print('Note: port {} is unchanged from cached value.'.format(port))
     else:
         print('Note: new port {} is different from cached value of {}.'.format(port, oldport))
-        port_file = open(port_filename, 'w')
-        port_file.write('{}\n'.format(port))
-        port_file.close()
+        try:
+            port_file = open(port_filename, 'w')
+            port_file.write('{}\n'.format(port))
+            port_file.close()
+        except Exception as e:
+            print('Error: problem writing cached port file: {}'.format(e))
+            print('Continuing anyway')
 
     # also  update deluged's port if it is running
     print('Updating deluge configuration')

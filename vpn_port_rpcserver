@@ -11,7 +11,7 @@ config = None
 # call the worker function
 def update_vpn_port(port):
     global config
-    print('received notice of forwarded port change: {}'.format(local_ip))
+    print('received notice of forwarded port change: {}'.format(port))
     try:
         local_updates.vpn_port_changed(port, config.config_dir)
     except Exception as e:
