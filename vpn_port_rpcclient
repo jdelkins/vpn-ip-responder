@@ -40,7 +40,7 @@ if __name__ == '__main__':
             log_address=('localhost', 514)
             if os.path.exists('/dev/log'):
                 log_address='/dev/log'
-            logging.getLogger().addHandler(logging.handlers.SysLogHandler(address=log_address))
+            logging.getLogger().addHandler(logging.handlers.SysLogHandler(address=log_address, facility=logging.handlers.SysLogHandler.LOG_DAEMON))
     else:
         logging.basicConfig(filename=config.logging, format='%(asctime)s %(module)s %(levelname)s %(message)s', level=logging.INFO)
 
