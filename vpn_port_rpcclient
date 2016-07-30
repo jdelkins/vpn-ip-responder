@@ -53,6 +53,6 @@ if __name__ == '__main__':
         real_client_id = client_id_file.readline().strip()
         client_id_file.close()
 
-    fwd_port = local_updates.get_forwarded_port(config.local_ip_url, config.credentials_file, config.client_id)
+    fwd_port = local_updates.get_forwarded_port(config.local_ip_url, config.credentials_file, real_client_id)
     local_updates.send_port(config.server_ip, config.server_port, fwd_port)
 
