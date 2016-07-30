@@ -34,7 +34,7 @@ def get_forwarded_port(local_ip_url, cred_url, client_id):
     print('requesting forwarding port from PIA')
     # note: i use curl rather than urllib because it has the crucial
     # --interface option, allowing us to source-route the request over the vpn
-    response = subprocess.check_output(['curl', '--interface', local_ip,
+    response = subprocess.check_output(['curl', '-s', '--interface', local_ip,
         '-d', 'client_id={}'.format(client_id),
         '-d', 'user={}'.format(user_name),
         '-d', 'pass={}'.format(passwd),
