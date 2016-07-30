@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import sys
 import os
 from argparse import ArgumentParser
@@ -8,6 +7,7 @@ import local_updates
 import re
 import time
 import urllib
+import logging, logging.handlers
 
 config = None
 
@@ -18,6 +18,8 @@ def parse_args():
     parser.add_argument('--credentials-file', '-c', required=True, type=str, help='Location (file or url) of file with VPN user & pass, each on one line')
     parser.add_argument('--server-ip',        '-s', default='127.0.0.1', type=str, help='XML RPC server address (default localhost)')
     parser.add_argument('--server-port',      '-p', default=8108, type=str, help='XML RPC server port (default 8108)')
+    parser.add_argument('--logging',          '-L', metavar='FILE_OR_SYSLOG', default='stderr', help='Send logging info to given file or to "syslog" or "stderr" (default "stderr")')
+    parser.add_argument('--sleep',            '-S', type=int, default=0, help='Seconds to sleep before making RPC call')
     return parser.parse_args()
 
 def is_url(s):
@@ -32,12 +34,22 @@ def is_url(s):
 
 if __name__ == '__main__':
     config = parse_args()
+    if config.logging in ['stderr', 'syslog']:
+        logging.basicConfig(format='%(asctime)s %(module)s %(levelname)s %(message)s', level=logging.INFO)
+        if config.logging == 'syslog':
+            log_address=('localhost', 514)
+            if os.path.exists('/dev/log'):
+                log_address='/dev/log'
+            logging.getLogger().addHandler(logging.handlers.SysLogHandler(address=log_address))
+    else:
+        logging.basicConfig(filename=config.logging, format='%(asctime)s %(module)s %(levelname)s %(message)s', level=logging.INFO)
+
     try:
         pid = os.fork()
         if pid > 0:
             sys.exit(0)
     except OSError as e:
-        print('fork failed: %d (%s)' % (e.errno, e.strerror), file=sys.stderr)
+        logging.critical('fork failed: %d (%s)' % (e.errno, e.strerror))
         sys.exit(1)
 
     os.chdir('/')
@@ -45,7 +57,7 @@ if __name__ == '__main__':
     os.umask(0)
 
     # give a couple of seconds for the routes to set up
-    time.sleep(2)
+    time.sleep(config.sleep)
 
     real_client_id = config.client_id
     if is_url(config.client_id) or os.path.isfile(config.client_id):
@@ -53,6 +65,10 @@ if __name__ == '__main__':
         real_client_id = client_id_file.readline().strip()
         client_id_file.close()
 
-    fwd_port = local_updates.get_forwarded_port(config.local_ip_url, config.credentials_file, real_client_id)
-    local_updates.send_port(config.server_ip, config.server_port, fwd_port)
+    try:
+        fwd_port = local_updates.get_forwarded_port(config.local_ip_url, config.credentials_file, real_client_id)
+        local_updates.send_port(config.server_ip, config.server_port, fwd_port)
+    except Exception as e:
+        logging.critical(e)
+        exit(1)
 
