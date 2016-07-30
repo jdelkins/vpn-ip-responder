@@ -1,38 +1,50 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import sys
 import subprocess
-import urllib.parse, urllib.request
+import urllib
 import json
 import os
 import re
+try:
+    from xmlrpclib import ServerProxy
+except:
+    from xmlrpc.client import ServerProxy
 
-def get_forwarded_port(local_ip, cred_filename, client_id_filename):
-    # read privateinternetaccess credentials
-    print('reading PIA credentials from {}'.format(cred_filename))
-    cred_file = open(cred_filename, 'r')
+def send_port(dest_ip, dest_port, forwarding_port):
+    s = ServerProxy('http://{}:{}'.format(dest_ip, dest_port))
+    try:
+        s.update_vpn_port(forwarding_port)
+    except Exception as e:
+        print('ERROR: %' % e)
+
+def get_forwarded_port(local_ip_url, cred_url, client_id):
+    print('reading VPN local IP from {}'.format(local_ip_url))
+    local_ip_file = urllib.urlopen(local_ip_url)
+    local_ip = local_ip_file.readline().strip()
+    local_ip_file.close()
+
+    print('reading PIA credentials from {}'.format(cred_url))
+    cred_file = urllib.urlopen(cred_url)
     [user_name, passwd] = [l.strip() for l in cred_file.readlines()]
     cred_file.close()
 
-    # client id is an id number to identify this host within my account
-    client_id_file = open(client_id_filename, 'r')
-    client_id = client_id_file.readline().strip()
-    print('got client_id {} from {}'.format(client_id, client_id_filename))
-    client_id_file.close()
-
     # set up the port forward request to PIA
     print('requesting forwarding port from PIA')
-    params = urllib.parse.urlencode({'user': user_name, 'pass': passwd,
-        'client_id': client_id, 'local_ip': local_ip}).encode('ascii')
-    request = urllib.request.Request('https://www.privateinternetaccess.com/vpninfo/port_forward_assignment', params)
+    # note: i use curl rather than urllib because it has the crucial
+    # --interface option, allowing us to source-route the request over the vpn
+    response = subprocess.check_output(['curl', '--interface', local_ip,
+        '-d', 'client_id={}'.format(client_id),
+        '-d', 'user={}'.format(user_name),
+        '-d', 'pass={}'.format(passwd),
+        '-d', 'local_ip={}'.format(local_ip),
+        'https://www.privateinternetaccess.com/vpninfo/port_forward_assignment'])
 
     # read the response, hopefully it worked. The form is as follows:
     # {"port":37542}
-    port = 0
-    with urllib.request.urlopen(request) as response:
-        j = response.read().decode('utf-8')
-        port = int(json.loads(j)['port'])
-        print('success: PIA gives us {:d}'.format(port))
+    port = int(json.loads(response)['port'])
+    print('success: PIA gives us {:d}'.format(port))
     return port
 
 port_filename_t = 'forwarded.port'
