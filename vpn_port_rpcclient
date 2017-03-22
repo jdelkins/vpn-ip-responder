@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--client-id',        '-i', required=True, type=str, help='String or file used to identify this VPN session')
     parser.add_argument('--local-ip-url',     '-l', required=True, type=str, help='Location (file or url) of file containing the local VPN endpoint IP')
     parser.add_argument('--credentials-file', '-c', required=True, type=str, help='Location (file or url) of file with VPN user & pass, each on one line')
+    parser.add_argument('--server-type',      '-t', type=str, default='vpn_port_rpcserver', choices=['vpn_port_rpcserver', 'rtorrent'], help='Server type: vpn_port_rpcserver or rtorrent')
     parser.add_argument('--server-ip',        '-s', default='127.0.0.1', type=str, help='XML RPC server address (default localhost)')
     parser.add_argument('--server-port',      '-p', default=8108, type=str, help='XML RPC server port (default 8108)')
     parser.add_argument('--logging',          '-L', metavar='FILE_OR_SYSLOG', default='stderr', help='Send logging info to given file or to "syslog" or "stderr" (default "stderr")')
@@ -67,7 +68,7 @@ if __name__ == '__main__':
 
     try:
         fwd_port = local_updates.get_forwarded_port(config.local_ip_url, config.credentials_file, real_client_id)
-        local_updates.send_port(config.server_ip, config.server_port, fwd_port)
+        local_updates.send_port(config.server_ip, config.server_port, fwd_port, config.server_type)
     except Exception as e:
         logging.critical(e)
         exit(1)

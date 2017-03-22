@@ -13,12 +13,19 @@ try:
 except:
     from xmlrpc.client import ServerProxy
 
-def send_port(dest_ip, dest_port, forwarding_port):
+def send_port(dest_ip, dest_port, forwarding_port, server_type):
     s = ServerProxy('http://{}:{}'.format(dest_ip, dest_port))
     try:
-        s.update_vpn_port(forwarding_port)
+        if server_type == 'vpn_port_rpcclient':
+            s.update_vpn_port(forwarding_port)
+        elif server_type == 'rtorrent':
+            s.set_port_range('{0}-{0}'.format(forwarding_port))
+            s.set_bind('0.0.0.0')
+        else:
+            raise Exception('Invalid server type "{}"'.format(server_type))
     except Exception as e:
         logging.critical('RPC call failed to http://{}:{} - {}'.format(dest_ip, dest_port, e))
+
 
 def get_forwarded_port(local_ip_url, cred_url, client_id):
     logging.info('reading VPN local IP from {}'.format(local_ip_url))
