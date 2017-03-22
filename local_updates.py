@@ -16,7 +16,7 @@ except:
 def send_port(dest_ip, dest_port, forwarding_port, server_type):
     s = ServerProxy('http://{}:{}'.format(dest_ip, dest_port))
     try:
-        if server_type == 'vpn_port_rpcclient':
+        if server_type == 'vpn_port_rpcserver':
             s.update_vpn_port(forwarding_port)
         elif server_type == 'rtorrent':
             s.set_port_range('{0}-{0}'.format(forwarding_port))
